@@ -1,56 +1,70 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 public class GrapplingHookLogic : MonoBehaviour
 {
-    public Camera cam;
-    public float HookSpeed = 30;
-    
-    private bool hooking;
-    private Transform playerTransform;
-    private Rigidbody playerRb;
-    private Ray rayo;
+    [Header("Propiedades fisicas del gancho")]
+    public float SpringForce = 5.0f;
+    public float SpringDamper = 7.0f;
+    public float SpringMassScale = 4.5f;
+    public float maxDistance = 30;
+
+    [Header("Layer Mask")]
+    public LayerMask whatIsGrappeable;
+
+    [Header("Objetos")]
+    public Transform gunTip, cam, player;
 
 
-    private void Start()
-    {
-        playerRb = GetComponent<Rigidbody>();
+    private LineRenderer lr;
+    private SpringJoint joint;
+    private Vector3 grapplingPoint = new Vector3(0,0,0);
+
+
+    void Start(){
+        lr = GetComponent<LineRenderer>();
     }
+
 
     void Update(){
-        if (Input.GetKeyDown(KeyCode.Q) && !hooking){
-            hooking = true;
-            rayo = cam.ScreenPointToRay(Input.mousePosition);
-            RaycastHit hitInfo;
-            if (Physics.Raycast(rayo, out hitInfo))
-            {
-                StartCoroutine(HookRoutine(hitInfo.point));
-            }
-                
+        if (Input.GetKeyDown(KeyCode.Q)){
+            StartHook();      
+        }
+        else if(Input.GetKeyUp(KeyCode.Q)){
+            StopHook();
         }
     }
 
-    IEnumerator HookRoutine(Vector3 hookPos)
+    void LateUpdate(){
+        drawRope();
+    }
+    void StartHook()
     {
-        //player se le cancela gravedad
-        playerRb.useGravity = false;
-        
-        //se escoge la posicion final
-        float distance = Vector3.Distance(transform.position, hookPos);
+        RaycastHit hitInfo;
+        if (Physics.Raycast(cam.position, cam.forward ,out hitInfo, maxDistance,whatIsGrappeable)){
+            grapplingPoint = hitInfo.point;
+            joint = player.gameObject.AddComponent<SpringJoint>();
+            joint.autoConfigureConnectedAnchor = false;
+            joint.connectedAnchor = grapplingPoint;
 
-        // mientras la distancia del player y de la posicion final sea mayor a 0.1f movemos al player en direccion de la posicion final
-        while (distance > 1.0f)
-        {
-            Debug.Log("hooking    " + distance);
-            Vector3 direction = hookPos - transform.position;
-            playerRb.velocity = direction.normalized * HookSpeed;
-            distance = Vector3.Distance(transform.position, hookPos);
-            yield return null;
+            float distance = Vector3.Distance(player.position, grapplingPoint);
+
+            joint.spring = SpringForce;
+            joint.damper = SpringDamper;
+            joint.massScale = SpringMassScale;
+
+            lr.positionCount = 2;
         }
-        //se le devuelve la gravedad al player
-        playerRb.useGravity = true;
-        hooking = false;
-        Debug.Log("hook end");
+    }
+    void drawRope(){
+        if (!joint) return;
+        lr.SetPosition(0, gunTip.position);
+        lr.SetPosition(1, grapplingPoint);
+    }
+    void StopHook(){
+        lr.positionCount = 0;
+        Destroy(joint);
     }
 }
