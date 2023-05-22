@@ -17,7 +17,6 @@ public class PlayerController : MonoBehaviour
     private Rigidbody rb;
 
     private Ray rayo;
-    private Vector3 rayPos;
 
     private float xForce = 0, yForce = 0, zForce = 0;
     private float mouseX = 0, mouseY = 0;
@@ -28,6 +27,7 @@ public class PlayerController : MonoBehaviour
         rb = GetComponent<Rigidbody>();
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
+        jumpRequest = true;
     }
 
     // Update is called once per frame
@@ -37,11 +37,10 @@ public class PlayerController : MonoBehaviour
         mouseY = -Input.GetAxis("Mouse Y");
 
 
-        if (Input.GetKeyDown(KeyCode.Space))
+        if (Input.GetKeyDown(KeyCode.Space) && jumpRequest == true)
         {
-            xForce = 0;
-            yForce = jumpForce;
-            zForce = 0;
+            jumpRequest = false;
+            rb.AddForce(Vector3.up*jumpForce, ForceMode.Impulse);
         }
         else
         {
@@ -69,6 +68,12 @@ public class PlayerController : MonoBehaviour
             }
         }
 
+    }
+    void OnCollisionStay(){
+        jumpRequest = true;
+    }
+    void OnCollisionExit(){
+        jumpRequest = false;
     }
 
     private void FixedUpdate(){

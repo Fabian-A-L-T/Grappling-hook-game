@@ -21,20 +21,28 @@ public class GrapplingHookLogic : MonoBehaviour
     private LineRenderer lr;
     private SpringJoint joint;
     private Vector3 grapplingPoint = new Vector3(0,0,0);
+    private bool hookAvailable;
+    private float distance;
 
 
     void Start(){
+        hookAvailable = true;
         lr = GetComponent<LineRenderer>();
     }
 
-
     void Update(){
-        if (Input.GetKeyDown(KeyCode.Q)){
-            StartHook();      
+        if (Input.GetKey(KeyCode.Q) && hookAvailable == true)
+        {
+            if (hookAvailable == true){
+                StartHook();
+            }
+        if(){
+
+                StopHook();
+
+            }
         }
-        else if(Input.GetKeyUp(KeyCode.Q)){
-            StopHook();
-        }
+        
     }
 
     void LateUpdate(){
@@ -49,7 +57,7 @@ public class GrapplingHookLogic : MonoBehaviour
             joint.autoConfigureConnectedAnchor = false;
             joint.connectedAnchor = grapplingPoint;
 
-            float distance = Vector3.Distance(player.position, grapplingPoint);
+            distance = Vector3.Distance(player.position, grapplingPoint);
 
             joint.spring = SpringForce;
             joint.damper = SpringDamper;
@@ -67,4 +75,5 @@ public class GrapplingHookLogic : MonoBehaviour
         lr.positionCount = 0;
         Destroy(joint);
     }
+
 }
