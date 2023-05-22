@@ -1869,10 +1869,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3e1e5c9051ccff14bac9b5afea401705, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SpringForce: 27.27
-  SpringDamper: 7
-  SpringMassScale: 4.5
-  maxDistance: 30
+  SpringForce: 12
+  SpringDamper: 2
+  SpringMassScale: 5
+  maxDistance: 40
   whatIsGrappeable:
     serializedVersion: 2
     m_Bits: 2147483647
@@ -2347,7 +2347,7 @@ Camera:
     y: 0
     width: 1
     height: 1
-  near clip plane: 0.3
+  near clip plane: 0.02
   far clip plane: 1000
   field of view: 60
   orthographic: 0
