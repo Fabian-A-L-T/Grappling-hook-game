@@ -6,53 +6,84 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
-
+    [Header("Propiedades de la camara")]
     public Camera cam;
+    public Transform orientation;
+    public float sensitivity = 300;
+
+    private float mouseX = 0, mouseY = 0;
+    private float xCamRotation;
+    private float yCamRotation;
+
+    [Header("Efectos")]
     public GameObject particula;
 
+    [Header("Propiedades del jugador")]
     public float moveForce = 250;
     public float jumpForce = 60;
     public float maxSpeed = 30;
 
     private Rigidbody rb;
+    private Vector3 moveDirection;
 
-    private Ray rayo;
-
-    private float xForce = 0, yForce = 0, zForce = 0;
-    private float mouseX = 0, mouseY = 0;
-
+    [Header("Ground check")]
+    public float playerHeight;
+    public LayerMask whatIsGround;
+    public float groundDrag;
     bool jumpRequest;
 
+
+    private Ray rayo;
+    private float horizontalInput, verticalInput;
+   
     void Start(){
+
         rb = GetComponent<Rigidbody>();
+        rb.freezeRotation = true;
+
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
+
         jumpRequest = true;
     }
 
     // Update is called once per frame
     private void Update() {
 
-        mouseX = Input.GetAxis("Mouse X");
-        mouseY = -Input.GetAxis("Mouse Y");
 
+        //Control de la camara
+        mouseX = Input.GetAxisRaw("Mouse X") * Time.deltaTime * sensitivity;
+        mouseY = Input.GetAxis("Mouse Y") * Time.deltaTime * sensitivity;
+
+        yCamRotation += mouseX;
+
+        xCamRotation -= mouseY;
+        xCamRotation = Mathf.Clamp(xCamRotation, -90f, 90f);
+
+        cam.transform.rotation = Quaternion.Euler(xCamRotation, yCamRotation, 0);
+        orientation.rotation = Quaternion.Euler(0, yCamRotation, 0);
+        //---------------------
+
+        //Control del personaje
+        horizontalInput = Input.GetAxisRaw("Horizontal");
+        verticalInput = Input.GetAxisRaw("Vertical");
 
         if (Input.GetKeyDown(KeyCode.Space) && jumpRequest == true)
         {
             jumpRequest = false;
             rb.AddForce(Vector3.up*jumpForce, ForceMode.Impulse);
         }
+        //--------------------
+
+        //GroundCheck
+        jumpRequest = Physics.Raycast(transform.position, Vector3.down, playerHeight * 0.5f + 0.2f, whatIsGround);
+
+        if(jumpRequest) {
+            rb.drag = groundDrag;
+        }
         else
         {
-            yForce = 0;
-            xForce = Input.GetAxis("Horizontal") * Time.deltaTime * moveForce;
-            zForce = Input.GetAxis("Vertical") * Time.deltaTime * moveForce;
-
-            if (rb.velocity.magnitude > maxSpeed)
-            {
-                xForce = -xForce;
-                zForce = -zForce;
-            }
+            rb.drag = 0;
         }
         
         if(Input.GetKeyDown(KeyCode.E)){
@@ -69,16 +100,9 @@ public class PlayerController : MonoBehaviour
         }
 
     }
-    void OnCollisionStay(){
-        jumpRequest = true;
-    }
-    void OnCollisionExit(){
-        jumpRequest = false;
-    }
-
     private void FixedUpdate(){
-        transform.Rotate(Vector3.up, mouseX * 10, Space.Self);
-        cam.transform.Rotate(Vector3.right, mouseY * 10, Space.Self);
-        rb.AddRelativeForce(new Vector3(xForce, yForce, zForce), ForceMode.Impulse);
+
+        moveDirection = orientation.forward*verticalInput + orientation.right*horizontalInput;
+        rb.AddForce(moveDirection.normalized*moveForce*10f);
     }
 }

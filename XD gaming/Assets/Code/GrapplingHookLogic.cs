@@ -21,28 +21,20 @@ public class GrapplingHookLogic : MonoBehaviour
     private LineRenderer lr;
     private SpringJoint joint;
     private Vector3 grapplingPoint = new Vector3(0,0,0);
-    private bool hookAvailable;
     private float distance;
 
 
     void Start(){
-        hookAvailable = true;
         lr = GetComponent<LineRenderer>();
     }
 
     void Update(){
-        if (Input.GetKey(KeyCode.Q) && hookAvailable == true)
-        {
-            if (hookAvailable == true){
-                StartHook();
-            }
-        if(){
-
-                StopHook();
-
-            }
+        if (Input.GetKeyDown(KeyCode.Q)){
+            StartHook();
         }
-        
+        else if(Input.GetKeyUp(KeyCode.Q)){
+            StopHook();
+        }      
     }
 
     void LateUpdate(){
