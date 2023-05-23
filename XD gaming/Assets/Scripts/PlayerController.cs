@@ -21,7 +21,10 @@ public class PlayerController : MonoBehaviour
     [Header("Propiedades del jugador")]
     public float moveForce = 250;
     public float jumpForce = 60;
-    public float maxSpeed = 30;
+    public float jumpCooldown = 1;
+    public float airMultiplier = 1;
+
+    private bool jumpReady;
 
     private Rigidbody rb;
     private Vector3 moveDirection;
@@ -30,13 +33,13 @@ public class PlayerController : MonoBehaviour
     public float playerHeight;
     public LayerMask whatIsGround;
     public float groundDrag;
-    bool jumpRequest;
+    bool isGrounded;
 
 
     private Ray rayo;
     private float horizontalInput, verticalInput;
-   
-    void Start(){
+
+    void Start() {
 
         rb = GetComponent<Rigidbody>();
         rb.freezeRotation = true;
@@ -44,7 +47,8 @@ public class PlayerController : MonoBehaviour
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
 
-        jumpRequest = true;
+        isGrounded = true;
+        jumpReady = true;
     }
 
     // Update is called once per frame
@@ -68,25 +72,39 @@ public class PlayerController : MonoBehaviour
         horizontalInput = Input.GetAxisRaw("Horizontal");
         verticalInput = Input.GetAxisRaw("Vertical");
 
-        if (Input.GetKeyDown(KeyCode.Space) && jumpRequest == true)
+        if (Input.GetKeyDown(KeyCode.Space) && isGrounded && jumpReady)
         {
-            jumpRequest = false;
-            rb.AddForce(Vector3.up*jumpForce, ForceMode.Impulse);
+            jumpReady = false;
+            rb.velocity = new Vector3(rb.velocity.x, 0f, rb.velocity.z);
+            rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
+
+            Invoke(nameof(resetJump), jumpCooldown);
         }
-        //--------------------
+        //---------------------
 
         //GroundCheck
-        jumpRequest = Physics.Raycast(transform.position, Vector3.down, playerHeight * 0.5f + 0.2f, whatIsGround);
+        isGrounded = Physics.Raycast(transform.position, Vector3.down, playerHeight * 0.5f + 0.2f, whatIsGround);
 
-        if(jumpRequest) {
+        if (isGrounded) {
             rb.drag = groundDrag;
         }
         else
         {
             rb.drag = 0;
         }
-        
-        if(Input.GetKeyDown(KeyCode.E)){
+        //---------------------
+
+        //Control de velocidad
+        Vector3 flatVel = new Vector3(rb.velocity.x, 0f, rb.velocity.z);
+
+        if (flatVel.magnitude > moveForce)
+        {
+            Vector3 limitedVel = flatVel.normalized * moveForce;
+            rb.velocity = new Vector3(limitedVel.x, rb.velocity.y, limitedVel.z);
+        }
+        //---------------------
+
+        if (Input.GetKeyDown(KeyCode.E)) {
 
             rayo = cam.ScreenPointToRay(Input.mousePosition);
             RaycastHit hitInfo;
@@ -100,9 +118,19 @@ public class PlayerController : MonoBehaviour
         }
 
     }
-    private void FixedUpdate(){
+    private void FixedUpdate() {
 
-        moveDirection = orientation.forward*verticalInput + orientation.right*horizontalInput;
-        rb.AddForce(moveDirection.normalized*moveForce*10f);
+        moveDirection = orientation.forward * verticalInput + orientation.right * horizontalInput;
+        if (isGrounded) {
+            rb.AddForce(moveDirection.normalized * moveForce * 10f);
+        }
+        else if (!isGrounded){
+            rb.AddForce(moveDirection.normalized * moveForce * airMultiplier * 10f);
+        }
+
+    }
+    void resetJump()
+    {
+        jumpReady = true;
     }
 }
